@@ -51,6 +51,7 @@
         <mall-common.version>1.0-SNAPSHOT</mall-common.version>
         <mall-mbg.version>1.0-SNAPSHOT</mall-mbg.version>
         <mall-security.version>1.0-SNAPSHOT</mall-security.version>
+        <wechat-sdk.version>4.2.0</wechat-sdk.version>
     </properties>
 
     <dependencies>
@@ -195,6 +196,12 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
+            </dependency>
+            <!--wechat sdk -->
+            <dependency>
+                <groupId>com.github.binarywang</groupId>
+                <artifactId>wx-java-mp-spring-boot-starter</artifactId>
+                <version>${wechat-sdk.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

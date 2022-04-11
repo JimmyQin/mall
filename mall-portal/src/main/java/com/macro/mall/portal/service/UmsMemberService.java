@@ -14,6 +14,8 @@ public interface UmsMemberService {
      */
     UmsMember getByUsername(String username);
 
+    UmsMember getByOpenid(String openid);
+
     /**
      * 根据会员编号获取会员
      */
@@ -24,6 +26,9 @@ public interface UmsMemberService {
      */
     @Transactional
     void register(String username, String password, String telephone, String authCode);
+
+    @Transactional
+    void register(String openid);
 
     /**
      * 生成验证码
@@ -52,10 +57,13 @@ public interface UmsMemberService {
      */
     UserDetails loadUserByUsername(String username);
 
+    UserDetails loadUserByOpenid(String openid);
+
     /**
      * 登录后获取token
      */
     String login(String username, String password);
+    String login(String code);
 
     /**
      * 刷新token

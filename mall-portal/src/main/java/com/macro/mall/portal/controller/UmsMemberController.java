@@ -59,6 +59,21 @@ public class UmsMemberController {
         return CommonResult.success(tokenMap);
     }
 
+    @ApiOperation("会员登录")
+    @RequestMapping(value = "/authLogin", method = RequestMethod.GET)
+    @ResponseBody
+    public CommonResult authLogin( String code, String scope) {
+
+        String token = memberService.login(code);
+        if (token == null) {
+            return CommonResult.validateFailed("用户名或密码错误");
+        }
+        Map<String, String> tokenMap = new HashMap<>();
+        tokenMap.put("token", token);
+        tokenMap.put("tokenHead", tokenHead);
+        return CommonResult.success(tokenMap);
+    }
+
     @ApiOperation("获取会员信息")
     @RequestMapping(value = "/info", method = RequestMethod.GET)
     @ResponseBody

@@ -22,6 +22,8 @@ public interface UmsMemberCacheService {
      */
     void setMember(UmsMember member);
 
+    void setMember(String cacheKey, UmsMember member);
+
     /**
      * 设置验证码
      */

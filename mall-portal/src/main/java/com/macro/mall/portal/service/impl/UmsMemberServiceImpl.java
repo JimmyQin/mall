@@ -1,5 +1,8 @@
 package com.macro.mall.portal.service.impl;
 
+import cn.hutool.core.util.IdUtil;
+import com.macro.mall.common.api.ResultCode;
+import com.macro.mall.common.exception.ApiException;
 import com.macro.mall.common.exception.Asserts;
 import com.macro.mall.mapper.UmsMemberLevelMapper;
 import com.macro.mall.mapper.UmsMemberMapper;
@@ -11,8 +14,12 @@ import com.macro.mall.portal.domain.MemberDetails;
 import com.macro.mall.portal.service.UmsMemberCacheService;
 import com.macro.mall.portal.service.UmsMemberService;
 import com.macro.mall.security.util.JwtTokenUtil;
+import me.chanjar.weixin.common.bean.oauth2.WxOAuth2AccessToken;
+import me.chanjar.weixin.common.error.WxErrorException;
+import me.chanjar.weixin.mp.api.WxMpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -49,6 +56,8 @@ public class UmsMemberServiceImpl implements UmsMemberService {
     private UmsMemberLevelMapper memberLevelMapper;
     @Autowired
     private UmsMemberCacheService memberCacheService;
+    @Autowired
+    private WxMpService wxMpService;
     @Value("${redis.key.authCode}")
     private String REDIS_KEY_PREFIX_AUTH_CODE;
     @Value("${redis.expire.authCode}")
@@ -60,10 +69,26 @@ public class UmsMemberServiceImpl implements UmsMemberService {
         if(member!=null) return member;
         UmsMemberExample example = new UmsMemberExample();
         example.createCriteria().andUsernameEqualTo(username);
+        example.or(example.createCriteria().andOpenidEqualTo(username));
         List<UmsMember> memberList = memberMapper.selectByExample(example);
         if (!CollectionUtils.isEmpty(memberList)) {
             member = memberList.get(0);
             memberCacheService.setMember(member);
+            return member;
+        }
+        return null;
+    }
+
+    @Override
+    public UmsMember getByOpenid(String openid) {
+        UmsMember member = memberCacheService.getMember(openid);
+        if(member!=null) return member;
+        UmsMemberExample example = new UmsMemberExample();
+        example.createCriteria().andOpenidEqualTo(openid);
+        List<UmsMember> memberList = memberMapper.selectByExample(example);
+        if (!CollectionUtils.isEmpty(memberList)) {
+            member = memberList.get(0);
+            memberCacheService.setMember(openid, member);
             return member;
         }
         return null;
@@ -93,6 +118,33 @@ public class UmsMemberServiceImpl implements UmsMemberService {
         umsMember.setUsername(username);
         umsMember.setPhone(telephone);
         umsMember.setPassword(passwordEncoder.encode(password));
+        umsMember.setCreateTime(new Date());
+        umsMember.setStatus(1);
+        //获取默认会员等级并设置
+        UmsMemberLevelExample levelExample = new UmsMemberLevelExample();
+        levelExample.createCriteria().andDefaultStatusEqualTo(1);
+        List<UmsMemberLevel> memberLevelList = memberLevelMapper.selectByExample(levelExample);
+        if (!CollectionUtils.isEmpty(memberLevelList)) {
+            umsMember.setMemberLevelId(memberLevelList.get(0).getId());
+        }
+        memberMapper.insert(umsMember);
+        umsMember.setPassword(null);
+    }
+
+    @Override
+    public void register(String openid) {
+
+        //查询是否已有该用户
+        UmsMemberExample example = new UmsMemberExample();
+        example.createCriteria().andUsernameEqualTo(openid);
+        List<UmsMember> umsMembers = memberMapper.selectByExample(example);
+        if (!CollectionUtils.isEmpty(umsMembers)) {
+            Asserts.fail("该用户已经存在");
+        }
+        //没有该用户进行添加操作
+        UmsMember umsMember = new UmsMember();
+        umsMember.setUsername(IdUtil.objectId());
+        umsMember.setOpenid(openid);
         umsMember.setCreateTime(new Date());
         umsMember.setStatus(1);
         //获取默认会员等级并设置
@@ -162,6 +214,15 @@ public class UmsMemberServiceImpl implements UmsMemberService {
     }
 
     @Override
+    public UserDetails loadUserByOpenid(String openid) {
+        UmsMember member = getByOpenid(openid);
+        if(member!=null){
+            return new MemberDetails(member);
+        }
+        return null;
+    }
+
+    @Override
     public String login(String username, String password) {
         String token = null;
         //密码需要客户端加密后传递
@@ -177,6 +238,28 @@ public class UmsMemberServiceImpl implements UmsMemberService {
             LOGGER.warn("登录异常:{}", e.getMessage());
         }
         return token;
+    }
+
+    @Override
+    public String login(String code) {
+        WxOAuth2AccessToken wxOAuth2AccessToken;
+        try {
+            wxOAuth2AccessToken = wxMpService.getOAuth2Service().getAccessToken(code);
+        } catch (WxErrorException e) {
+            LOGGER.error("微信授权失败:{}", e);
+            throw new ApiException(ResultCode.UNAUTHORIZED);
+        }
+        UserDetails userDetails = loadUserByOpenid(wxOAuth2AccessToken.getOpenId());
+        if (userDetails == null) {
+            UmsMemberService umsMemberService = (UmsMemberService)AopContext.currentProxy();
+            umsMemberService.register(wxOAuth2AccessToken.getOpenId());
+            userDetails = loadUserByOpenid(wxOAuth2AccessToken.getOpenId());
+        }
+
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // todo: 用openid作为token信息，不知道会不会导致其他bug，待验证排查
+        return jwtTokenUtil.generateToken(wxOAuth2AccessToken.getOpenId());
     }
 
     @Override

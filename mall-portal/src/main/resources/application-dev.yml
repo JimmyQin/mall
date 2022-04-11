@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/mall?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://101.43.17.123:3306/mall?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
-    password: root
+    password: 809fdg~AE@57
     druid:
       initial-size: 5 #连接池初始化大小
       min-idle: 10 #最小空闲连接数
@@ -21,10 +21,10 @@ spring:
       port: 27017
       database: mall-port
   redis:
-    host: localhost # Redis服务器地址
+    host: 101.43.17.123 # Redis服务器地址
     database: 0 # Redis数据库索引（默认为0）
     port: 6379 # Redis服务器连接端口
-    password: # Redis服务器连接密码（默认为空）
+    password: 323&dhfqdWQ41
     timeout: 300ms # 连接超时时间（毫秒）
   rabbitmq:
     host: localhost
@@ -40,4 +40,12 @@ logging:
 
 logstash:
   host: localhost
+
+wx:
+  mp:
+    aesKey: '@aesKey'
+    appId: wx0c7247818e8a7662
+    secret: 5e527f9635ab12c8ec883f6a8bc96c50
+    token: '@token'
+
 
