@@ -2,9 +2,7 @@ package com.macro.mall.portal.controller;
 
 import com.macro.mall.common.api.CommonPage;
 import com.macro.mall.common.api.CommonResult;
-import com.macro.mall.portal.domain.ConfirmOrderResult;
-import com.macro.mall.portal.domain.OmsOrderDetail;
-import com.macro.mall.portal.domain.OrderParam;
+import com.macro.mall.portal.domain.*;
 import com.macro.mall.portal.service.OmsPortalOrderService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -109,5 +107,13 @@ public class OmsPortalOrderController {
     public CommonResult deleteOrder(Long orderId) {
         portalOrderService.deleteOrder(orderId);
         return CommonResult.success(null);
+    }
+
+    @ApiOperation("订单状态分组数量统计")
+    @RequestMapping(value = "/statusGroup", method = RequestMethod.GET)
+    @ResponseBody
+    public CommonResult<OmsOrderStatusCount> statusGroup() {
+        OmsOrderStatusCount omsOrderStatusCount = portalOrderService.statusGroup();
+        return CommonResult.success(omsOrderStatusCount);
     }
 }

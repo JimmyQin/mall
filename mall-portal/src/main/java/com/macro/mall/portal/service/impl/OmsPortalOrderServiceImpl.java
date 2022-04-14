@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.github.pagehelper.PageHelper;
 import com.macro.mall.common.api.CommonPage;
+import com.macro.mall.common.enums.OmsOrderStatusEnum;
 import com.macro.mall.common.exception.Asserts;
 import com.macro.mall.common.service.RedisService;
 import com.macro.mall.mapper.*;
@@ -410,6 +411,22 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
         }else{
             Asserts.fail("只能删除已完成或已关闭的订单！");
         }
+    }
+
+    @Override
+    public OmsOrderStatusCount statusGroup() {
+        UmsMember member = memberService.getCurrentMember();
+        List<OmsOrderStatusGroup> omsOrderStatusGroupList = portalOrderDao.selectGroupByStatus(member.getId());
+        // 填充数据
+        Map<Integer, Integer> statusGroup = omsOrderStatusGroupList.stream().collect(Collectors.toMap(OmsOrderStatusGroup::getStatus, OmsOrderStatusGroup::getTotal));
+        OmsOrderStatusCount omsOrderStatusCount = new OmsOrderStatusCount();
+        omsOrderStatusCount.setAll(statusGroup.get(OmsOrderStatusEnum.ALL.getCode()));
+        omsOrderStatusCount.setPending(statusGroup.get(OmsOrderStatusEnum.PENDING.getCode()));
+        omsOrderStatusCount.setDelivered(statusGroup.get(OmsOrderStatusEnum.DELIVERED.getCode()));
+        omsOrderStatusCount.setClosed(statusGroup.get(OmsOrderStatusEnum.CLOSED.getCode()));
+        omsOrderStatusCount.setCompleted(statusGroup.get(OmsOrderStatusEnum.COMPLETED.getCode()));
+        omsOrderStatusCount.setAwaitDelivery(statusGroup.get(OmsOrderStatusEnum.AWAIT_DELIVERY.getCode()));
+        return omsOrderStatusCount;
     }
 
     /**

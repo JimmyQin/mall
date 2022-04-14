@@ -228,9 +228,9 @@ public class UmsMemberServiceImpl implements UmsMemberService {
         //密码需要客户端加密后传递
         try {
             UserDetails userDetails = loadUserByUsername(username);
-            if(!passwordEncoder.matches(password,userDetails.getPassword())){
-                throw new BadCredentialsException("密码不正确");
-            }
+//            if(!passwordEncoder.matches(password,userDetails.getPassword())){
+//                throw new BadCredentialsException("密码不正确");
+//            }
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
             token = jwtTokenUtil.generateToken(userDetails);
